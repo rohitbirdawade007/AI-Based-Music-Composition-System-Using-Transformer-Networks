@@ -34,25 +34,83 @@ def show_generate_page():
     left_col, right_col = st.columns([1, 1.6], gap="large")
 
     with left_col:
-        st.markdown("### ⚙️ Generation Parameters")
+        st.markdown("### ⚙️ Control Dashboard")
+
+        # ── Presets Configuration ──────────────────────────────────────────────
+        PRESETS = {
+            "Custom Settings": {},
+            "🎹 Neo-Classical Piano": {
+                "genre": "Classical", "mood": "Calm", "key": "C", "mode": "major",
+                "tempo": 80, "num_notes": 64, "instrument": "Piano"
+            },
+            "🎷 Energetic Jazz Swing": {
+                "genre": "Jazz", "mood": "Energetic", "key": "F", "mode": "dorian",
+                "tempo": 140, "num_notes": 96, "instrument": "Guitar"
+            },
+            "🎛️ Cyberpunk Synthwave": {
+                "genre": "Electronic", "mood": "Energetic", "key": "A", "mode": "pentatonic_minor",
+                "tempo": 120, "num_notes": 128, "instrument": "Synth"
+            },
+            "🧘 Ambient Meditation": {
+                "genre": "Ambient", "mood": "Calm", "key": "E", "mode": "lydian",
+                "tempo": 60, "num_notes": 48, "instrument": "Flute"
+            },
+            "🎸 Melancholic Blues": {
+                "genre": "Blues", "mood": "Melancholic", "key": "G", "mode": "blues",
+                "tempo": 75, "num_notes": 64, "instrument": "Organ"
+            }
+        }
+
+        # Initialize session state for preset dropdown
+        if "selected_preset" not in st.session_state:
+            st.session_state.selected_preset = "Custom Settings"
+
+        # Parameter default values mapping
+        default_vals = {
+            "genre": "Classical",
+            "mood": "Calm",
+            "key": "C",
+            "mode": "major",
+            "tempo": 120,
+            "num_notes": 64,
+            "instrument": "Piano"
+        }
+
+        # Ensure all widget states are initialized in session state
+        for k, v in default_vals.items():
+            state_key = f"gen_param_{k}"
+            if state_key not in st.session_state:
+                st.session_state[state_key] = v
+
+        # Preset selector
+        preset_choice = st.selectbox(
+            "🎛️ Load Composition Preset",
+            list(PRESETS.keys()),
+            key="preset_dropdown_selector"
+        )
+
+        # Update values on preset change
+        if preset_choice != st.session_state.selected_preset:
+            st.session_state.selected_preset = preset_choice
+            if preset_choice != "Custom Settings":
+                for param, val in PRESETS[preset_choice].items():
+                    st.session_state[f"gen_param_{param}"] = val
 
         with st.container():
             # ── Genre & Mood ───────────────────────────────────────────────
-            st.markdown("**🎭 Style**")
+            st.markdown("**🎭 Style & Feel**")
             col1, col2 = st.columns(2)
             with col1:
                 genre = st.selectbox(
                     "Genre",
                     ["Classical", "Jazz", "Pop", "Blues", "Electronic", "Ambient", "Folk"],
-                    index=0,
-                    key="genre_select",
+                    key="gen_param_genre",
                 )
             with col2:
                 mood = st.selectbox(
                     "Mood",
                     ["Calm", "Happy", "Dramatic", "Mysterious", "Energetic", "Melancholic", "Romantic"],
-                    index=0,
-                    key="mood_select",
+                    key="gen_param_mood",
                 )
 
             # ── Key & Mode ─────────────────────────────────────────────────
@@ -62,37 +120,35 @@ def show_generate_page():
                 key = st.selectbox(
                     "Key",
                     ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"],
-                    index=0,
-                    key="key_select",
+                    key="gen_param_key",
                 )
             with col4:
                 mode = st.selectbox(
                     "Mode / Scale",
                     ["major", "minor", "dorian", "blues", "pentatonic_major", "pentatonic_minor",
                      "lydian", "mixolydian", "phrygian"],
-                    index=0,
-                    key="mode_select",
+                    key="gen_param_mode",
                 )
 
             # ── Tempo & Length ─────────────────────────────────────────────
             st.markdown("**🥁 Tempo & Length**")
             tempo = st.slider(
                 "Tempo (BPM)",
-                min_value=40, max_value=220, value=120, step=5,
-                key="tempo_slider",
+                min_value=40, max_value=220, step=5,
+                key="gen_param_tempo",
                 help="Beats per minute. 60-80=slow, 120=medium, 140+=fast"
             )
             num_notes = st.slider(
                 "Number of Notes",
-                min_value=16, max_value=256, value=64, step=8,
-                key="notes_slider",
+                min_value=16, max_value=256, step=8,
+                key="gen_param_num_notes",
             )
 
             # ── Instrument ─────────────────────────────────────────────────
             instrument = st.selectbox(
-                "🎸 Instrument",
+                "🎸 Instrument Voice",
                 ["Piano", "Guitar", "Strings", "Flute", "Violin", "Organ", "Synth"],
-                key="instrument_select",
+                key="gen_param_instrument",
             )
 
             # ── Advanced Options ───────────────────────────────────────────

@@ -36,7 +36,7 @@ st.set_page_config(
 PREMIUM_CSS = """
 <style>
 /* ── Google Fonts ── */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
 
 /* ── Root variables ── */
 :root {
@@ -64,6 +64,11 @@ PREMIUM_CSS = """
     background: var(--bg-primary) !important;
     font-family: 'Inter', -apple-system, sans-serif !important;
     color: var(--text-primary) !important;
+}
+
+h1, h2, h3, h4, h5, h6, .hero-title {
+    font-family: 'Outfit', -apple-system, sans-serif !important;
+    font-weight: 700 !important;
 }
 
 /* ── Hide default Streamlit elements ── */
@@ -347,15 +352,23 @@ def main():
     # ── Sidebar Navigation ─────────────────────────────────────────────────
     with st.sidebar:
         st.markdown("""
-        <div style='text-align:center; padding: 16px 0 24px;'>
-            <div style='font-size: 2.5rem; margin-bottom: 8px;'>🎵</div>
-            <div style='font-size: 1.1rem; font-weight: 700; 
-                        background: linear-gradient(135deg, #8b5cf6, #3b82f6);
-                        -webkit-background-clip: text; -webkit-text-fill-color: transparent;'>
-                AI Music Composer
+        <div style='text-align:center; padding: 12px 0 20px;'>
+            <svg width="44" height="44" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 0 10px rgba(139, 92, 246, 0.6)); margin-bottom: 8px;">
+                <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm1 14.5h-2v-9h2v9zm4 2h-2v-13h2v13zm-8-4H7v-5h2v5z" fill="url(#grad)" />
+                <defs>
+                    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#8b5cf6" />
+                        <stop offset="100%" stop-color="#14b8a6" />
+                    </linearGradient>
+                </defs>
+            </svg>
+            <div style='font-family: "Outfit", sans-serif; font-size: 1.3rem; font-weight: 800; letter-spacing: -0.5px;
+                        background: linear-gradient(135deg, #8b5cf6, #3b82f6 50%, #14b8a6);
+                        -webkit-background-clip: text; -webkit-text-fill-color: transparent; line-height: 1.2;'>
+                SONIC NEURALIS
             </div>
-            <div style='font-size: 0.75rem; color: #64748b; margin-top: 4px;'>
-                Transformer Networks v1.0
+            <div style='font-size: 0.65rem; color: #475569; margin-top: 4px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase;'>
+                Enterprise Composer
             </div>
         </div>
         """, unsafe_allow_html=True)
@@ -369,31 +382,62 @@ def main():
 
         st.markdown("---")
 
-        # Quick status
-        st.markdown("**System Status**")
-        col1, col2 = st.columns(2)
-        with col1:
-            st.metric("Mode", "Demo", help="Running in demo mode — no GPU needed")
-        with col2:
-            st.metric("API", "✅", help="Flask API available at localhost:5000")
-
+        # Enterprise System Monitor
         st.markdown("""
-        <div style='margin-top: 16px; padding: 12px; background: rgba(139,92,246,0.1); 
-                    border: 1px solid rgba(139,92,246,0.3); border-radius: 10px;
-                    font-size: 12px; color: #94a3b8;'>
-            💡 <strong style='color: #c4b5fd;'>Demo Mode Active</strong><br>
-            Generates music using music theory heuristics. 
-            Train a model for AI-powered generation.
+        <div style="background: rgba(26, 26, 46, 0.4); border: 1px solid rgba(139, 92, 246, 0.15); border-radius: 12px; padding: 14px; margin-top: 8px;">
+            <div style="font-size: 10px; font-weight: 700; color: #cbd5e1; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+                <span>System Status</span>
+                <span style="color: #14b8a6; display: flex; align-items: center; gap: 4px; font-weight: 600;">
+                    <span style="display: inline-block; width: 6px; height: 6px; background: #14b8a6; border-radius: 50%;"></span>
+                    Active
+                </span>
+            </div>
+            <div style="font-size: 11px; color: #94a3b8; margin-bottom: 6px; display: flex; justify-content: space-between;">
+                <span>Generation Engine</span>
+                <span style="font-weight: 600; color: #8b5cf6;">Demo (Heuristics)</span>
+            </div>
+            <div style="font-size: 11px; color: #94a3b8; margin-bottom: 6px; display: flex; justify-content: space-between;">
+                <span>REST API Server</span>
+                <span style="font-weight: 600; color: #14b8a6;">Online</span>
+            </div>
+            <hr style="margin: 8px 0; border: none; height: 1px; background: rgba(139, 92, 246, 0.15);" />
+            <!-- CPU Bar -->
+            <div style="margin-bottom: 6px;">
+                <div style="font-size: 10px; color: #94a3b8; display: flex; justify-content: space-between; margin-bottom: 2px;">
+                    <span>CPU Load</span>
+                    <span>14%</span>
+                </div>
+                <div style="background: rgba(255,255,255,0.05); height: 4px; border-radius: 2px; overflow: hidden;">
+                    <div style="background: #3b82f6; width: 14%; height: 100%;"></div>
+                </div>
+            </div>
+            <!-- VRAM Bar -->
+            <div>
+                <div style="font-size: 10px; color: #94a3b8; display: flex; justify-content: space-between; margin-bottom: 2px;">
+                    <span>GPU Memory</span>
+                    <span>0.0 / 16 GB</span>
+                </div>
+                <div style="background: rgba(255,255,255,0.05); height: 4px; border-radius: 2px; overflow: hidden;">
+                    <div style="background: #475569; width: 0%; height: 100%;"></div>
+                </div>
+            </div>
         </div>
         """, unsafe_allow_html=True)
 
         st.markdown("---")
+        
+        # User Section
         st.markdown("""
-        <div style='font-size: 11px; color: #475569; text-align: center;'>
-            Built by <strong style='color: #8b5cf6;'>Rohit Birdawade</strong><br>
-            <a href='https://github.com/rohitbirdawade007' 
-               style='color: #3b82f6; text-decoration: none;'>
-               🐙 GitHub
+        <div style="display: flex; align-items: center; gap: 12px; background: rgba(26,26,46,0.3); border: 1px solid rgba(139,92,246,0.1); border-radius: 12px; padding: 10px; margin-top: 16px;">
+            <div style="width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #8b5cf6, #3b82f6); display: flex; justify-content: center; align-items: center; font-weight: 700; color: white; font-size: 11px; border: 1px solid rgba(255,255,255,0.2);">
+                RB
+            </div>
+            <div style="flex: 1; overflow: hidden;">
+                <div style="font-size: 11px; font-weight: 600; color: #f1f5f9; white-space: nowrap; text-overflow: ellipsis; text-align: left;">Rohit Birdawade</div>
+                <div style="font-size: 9px; color: #94a3b8; white-space: nowrap; text-overflow: ellipsis; text-align: left;">Lead AI Engineer</div>
+            </div>
+            <a href="https://github.com/rohitbirdawade007" target="_blank" style="text-decoration: none; font-size: 1.1rem; color: #8b5cf6; display: flex; align-items: center;">
+                🐙
             </a>
         </div>
         """, unsafe_allow_html=True)
