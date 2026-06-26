@@ -207,9 +207,21 @@ def show_generate_page():
             st.markdown("<br>", unsafe_allow_html=True)
 
             # ── Tabs for output ────────────────────────────────────────────
-            tab1, tab2, tab3 = st.tabs(["🎹 Piano Roll", "🎵 Note Sequence", "📥 Download"])
+            tab1, tab2, tab3, tab4 = st.tabs(["🔊 Play Audio", "🎹 Piano Roll", "🎵 Note Sequence", "📥 Download"])
 
             with tab1:
+                try:
+                    from src.utils.audio import AudioUtils
+                    audio_util = AudioUtils()
+                    player_html = audio_util.generate_audio_html(
+                        result.midi_bytes,
+                        title=f"{genre} · {mood} · {key} {mode}"
+                    )
+                    st.components.v1.html(player_html, height=380, scrolling=False)
+                except Exception as e:
+                    st.error(f"Could not load audio player: {e}")
+
+            with tab2:
                 try:
                     from src.utils.visualization import MusicVisualizer
                     viz = MusicVisualizer()
@@ -225,10 +237,10 @@ def show_generate_page():
                     # Fallback: text representation
                     _show_text_piano_roll(result.pitches)
 
-            with tab2:
+            with tab3:
                 _show_note_sequence(result.pitches, result.durations, result.velocities, key, mode)
 
-            with tab3:
+            with tab4:
                 _show_download_section(result)
 
             # ── Theory Validation ──────────────────────────────────────────

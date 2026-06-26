@@ -135,13 +135,16 @@ def show_upload_page():
 def _process_uploaded_midi(midi_bytes: bytes, filename: str):
     """Process and index an uploaded MIDI file."""
     try:
-        from src.rag.embedder import MusicEmbedder
-        from src.rag.retriever import MusicRetriever
-
-        embedder = MusicEmbedder()
-        embedding = embedder.embed_midi_bytes(midi_bytes)
-
         retriever = _get_global_retriever()
+        
+        # Check for duplicates
+        if any(m.get("file_name") == filename for m in retriever._metadata):
+            st.info(f"ℹ️ {filename} is already indexed in style database.")
+            return
+
+        from src.rag.embedder import MusicEmbedder
+        embedder = MusicEmbedder()
+        
         retriever.add_midi(midi_bytes, filename, metadata={"filename": filename})
 
         # Show success with features
@@ -170,16 +173,32 @@ def _process_uploaded_midi(midi_bytes: bytes, filename: str):
 
 
 def _get_global_retriever():
-    """Get or create a global retriever from session state."""
+    """Get or create a global retriever from session state and auto-load samples."""
     if "rag_retriever" not in st.session_state:
         from src.rag.retriever import MusicRetriever
-        st.session_state.rag_retriever = MusicRetriever()
+        retriever = MusicRetriever()
+        
+        # Auto-index sample files if index is empty
+        try:
+            sample_dir = Path("data/sample")
+            if sample_dir.exists():
+                for midi_path in sample_dir.glob("*.mid"):
+                    if not any(m.get("file_name") == midi_path.name for m in retriever._metadata):
+                        midi_bytes = midi_path.read_bytes()
+                        retriever.add_midi(midi_bytes, midi_path.name, metadata={"filename": midi_path.name})
+        except Exception as e:
+            st.warning(f"Could not load sample MIDI files: {e}")
+            
+        st.session_state.rag_retriever = retriever
     return st.session_state.rag_retriever
 
 
 def _show_rag_database_stats():
     """Display RAG database statistics."""
-    if "rag_retriever" not in st.session_state:
+    retriever = _get_global_retriever()
+    stats = retriever.get_stats()
+
+    if retriever.size == 0:
         st.markdown("""
         <div class='music-card' style='text-align: center; padding: 40px 20px;'>
             <div style='font-size: 3rem; margin-bottom: 12px;'>🗄️</div>
@@ -188,35 +207,65 @@ def _show_rag_database_stats():
         """, unsafe_allow_html=True)
         return
 
-    retriever = st.session_state.rag_retriever
-    stats = retriever.get_stats()
-
     m1, m2 = st.columns(2)
-    m1.metric("Indexed Files", stats.get("num_files", 0))
-    m2.metric("Index Size", f"{stats.get('index_size', 0)} vectors")
+    m1.metric("Indexed Files", stats.get("unique_files", 0))
+    m2.metric("Index Size", f"{stats.get('total_entries', 0)} vectors")
 
-    if stats.get("files"):
-        st.markdown("**Indexed files:**")
-        for f in stats["files"][-5:]:
+    files = [m.get("file_name", "Unknown") for m in retriever._metadata]
+    if files:
+        st.markdown("**Indexed files (latest):**")
+        for f in files[-5:]:
             st.markdown(f"- 📄 {f}")
+
+
+def _create_query_embedding(key: str, mode: str, tempo: int) -> np.ndarray:
+    """Create a query embedding vector by synthesizing a scale-aligned melody."""
+    from src.data.midi_parser import ParsedNote
+    from src.theory.music_theory_engine import MusicTheoryEngine
+    from src.rag.embedder import MusicEmbedder
+    
+    # 1. Get scale pitches
+    engine = MusicTheoryEngine(key=key, mode=mode)
+    scale_pitches = engine.get_scale_pitches()
+    
+    # 2. Build synthetic note sequence (quarter-note melody stepping up/down)
+    notes = []
+    beat_dur = 60.0 / tempo
+    
+    pitches_sequence = []
+    for step in range(16):
+        pitch_class = scale_pitches[step % len(scale_pitches)]
+        octave = 5 if step % 2 == 0 else 4
+        pitch = 12 * octave + pitch_class
+        pitches_sequence.append(pitch)
+        
+    start_time = 0.0
+    for p in pitches_sequence:
+        notes.append(ParsedNote(
+            pitch=p,
+            start_time=start_time,
+            end_time=start_time + beat_dur,
+            duration=beat_dur,
+            velocity=80,
+            channel=0
+        ))
+        start_time += beat_dur
+        
+    # 3. Embed synthetic notes
+    embedder = MusicEmbedder()
+    return embedder.embed(notes)
 
 
 def _show_retrieval_results(key, mode, tempo):
     """Show similar style retrieval results."""
-    if "rag_retriever" not in st.session_state:
+    retriever = _get_global_retriever()
+    if retriever.size == 0:
         st.info("No styles indexed yet. Upload MIDI files first.")
         return
 
     try:
-        from src.rag.embedder import MusicEmbedder
         import numpy as np
-
-        embedder = MusicEmbedder()
-        # Create a query embedding from the parameters
-        # Simple: generate synthetic features based on key/mode/tempo
-        query_emb = embedder.create_query_embedding(key, mode, tempo)
-
-        retriever = st.session_state.rag_retriever
+        query_emb = _create_query_embedding(key, mode, tempo)
         results = retriever.search(query_emb, top_k=3)
 
         if not results:
@@ -225,7 +274,7 @@ def _show_retrieval_results(key, mode, tempo):
 
         st.markdown("**Top matching styles:**")
         for i, r in enumerate(results):
-            similarity = r.get("similarity", 0)
+            score = r.get("score", 0.0)
             col = ["#8b5cf6", "#3b82f6", "#14b8a6"][i % 3]
             st.markdown(f"""
             <div style='background: rgba(139,92,246,0.08); border: 1px solid rgba(139,92,246,0.3);
@@ -233,18 +282,20 @@ def _show_retrieval_results(key, mode, tempo):
                         display: flex; align-items: center; gap: 12px;'>
                 <div style='font-size: 1.5rem;'>🎵</div>
                 <div style='flex: 1;'>
-                    <strong style='color: {col};'>#{i+1} {r.get("filename", "Unknown")}</strong><br>
+                    <strong style='color: {col};'>#{i+1} {r.get("file_name", "Unknown")}</strong><br>
                     <div style='color: #64748b; font-size: 12px;'>
-                        Similarity: {similarity:.3f} · {r.get("metadata", {}).get("filename", "")}
+                        Similarity: {score:.3f} · Rank: {r.get("rank", i+1)}
                     </div>
                 </div>
                 <div style='background: {col}22; border: 1px solid {col}44; 
                             border-radius: 8px; padding: 4px 12px;
                             color: {col}; font-size: 12px; font-weight: 600;'>
-                    {similarity:.0%} match
+                    {max(0.0, score):.0%} match
                 </div>
             </div>
             """, unsafe_allow_html=True)
 
     except Exception as e:
         st.warning(f"Retrieval failed: {e}")
+        import traceback
+        st.code(traceback.format_exc())
