@@ -1,0 +1,158 @@
+name: CI — AI Music Composition System
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  lint:
+    name: 🔍 Lint & Format Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install lint tools
+        run: pip install flake8 black
+
+      - name: Run flake8
+        run: |
+          flake8 src/ training/ api/ app/ tests/ \
+            --max-line-length=120 \
+            --extend-ignore=E203,W503,E501 \
+            --exclude=__pycache__,.git,*.egg-info
+        continue-on-error: true
+
+      - name: Check black formatting
+        run: |
+          black --check --diff --line-length=120 src/ tests/ api/ training/
+        continue-on-error: true
+
+  test:
+    name: 🧪 Unit Tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.9", "3.10", "3.11"]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install minimal dependencies (no torch for CI speed)
+        run: |
+          pip install --upgrade pip
+          pip install numpy scipy pytest pytest-cov midiutil
+
+      - name: Run unit tests
+        run: |
+          pytest tests/ \
+            -v \
+            --tb=short \
+            --cov=src \
+            --cov-report=term-missing \
+            --cov-report=xml \
+            -x \
+            --ignore=tests/test_model.py
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+
+      - name: Upload coverage report
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./coverage.xml
+          flags: unittests
+          name: codecov-${{ matrix.python-version }}
+        continue-on-error: true
+
+  structure-check:
+    name: 📁 Project Structure Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify critical files exist
+        run: |
+          echo "Checking project structure..."
+          files=(
+            "requirements.txt"
+            "setup.py"
+            "config/config.yaml"
+            "src/__init__.py"
+            "src/tokenizer/music_tokenizer.py"
+            "src/model/transformer.py"
+            "src/model/attention.py"
+            "src/model/positional_encoding.py"
+            "src/theory/music_theory_engine.py"
+            "src/inference/generator.py"
+            "src/rag/embedder.py"
+            "src/rag/retriever.py"
+            "src/utils/visualization.py"
+            "src/utils/audio.py"
+            "src/data/midi_parser.py"
+            "src/data/preprocessor.py"
+            "src/data/dataset.py"
+            "api/app.py"
+            "api/routes.py"
+            "app/streamlit_app.py"
+            "training/train.py"
+            "training/evaluate.py"
+            "tests/test_tokenizer.py"
+            "tests/test_theory_engine.py"
+            "tests/test_generator.py"
+          )
+          missing=0
+          for f in "${files[@]}"; do
+            if [ -f "$f" ]; then
+              echo "✅ $f"
+            else
+              echo "❌ MISSING: $f"
+              missing=$((missing + 1))
+            fi
+          done
+          if [ $missing -gt 0 ]; then
+            echo "❌ $missing files missing!"
+            exit 1
+          fi
+          echo "✅ All critical files present!"
+
+  import-check:
+    name: 🐍 Python Import Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install minimal deps
+        run: pip install numpy scipy midiutil
+
+      - name: Check core imports
+        run: |
+          python -c "
+          import sys; sys.path.insert(0, '.')
+          print('Testing imports...')
+          from src.tokenizer.music_tokenizer import MusicTokenizer; print('✅ MusicTokenizer')
+          from src.theory.music_theory_engine import MusicTheoryEngine; print('✅ MusicTheoryEngine')
+          from src.inference.generator import MusicGenerator; print('✅ MusicGenerator')
+          print('All core imports successful!')
+          "
+        env:
+          PYTHONPATH: ${{ github.workspace }}

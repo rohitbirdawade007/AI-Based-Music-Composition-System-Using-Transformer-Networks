@@ -1,0 +1,96 @@
+# ============================================================
+# AI-Based Music Composition System — .gitignore
+# ============================================================
+
+# ── Python ──────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+*.whl
+
+# ── Virtual Environments ─────────────────────────────────────
+venv/
+env/
+.env
+.venv
+ENV/
+
+# ── Environment Variables ───────────────────────────────────
+.env
+.env.local
+.env.production
+secrets.yaml
+
+# ── Jupyter Notebooks Checkpoints ───────────────────────────
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# ── Data Directories ────────────────────────────────────────
+data/raw/
+data/processed/
+!data/sample/
+!data/sample/*.mid
+!data/sample/*.midi
+
+# ── Model Checkpoints & Weights ─────────────────────────────
+checkpoints/
+*.pth
+*.pt
+*.ckpt
+*.pkl
+*.h5
+*.hdf5
+models/saved/
+
+# ── FAISS Index Files ────────────────────────────────────────
+*.index
+faiss_index/
+vector_store/
+
+# ── Logs ────────────────────────────────────────────────────
+logs/
+*.log
+runs/
+wandb/
+mlruns/
+tensorboard/
+
+# ── Generated Music Output ──────────────────────────────────
+output/
+generated/
+*.mid
+!data/sample/*.mid
+
+# ── OS Files ────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── IDE ─────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+.project
+.classpath
+
+# ── Testing ─────────────────────────────────────────────────
+.pytest_cache/
+.coverage
+htmlcov/
+coverage.xml
+
+# ── Streamlit ───────────────────────────────────────────────
+.streamlit/secrets.toml
+
+# ── Misc ────────────────────────────────────────────────────
+*.bak
+*.tmp
+tmp/
+temp/

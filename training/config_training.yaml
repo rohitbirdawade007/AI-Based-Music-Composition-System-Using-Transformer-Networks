@@ -1,0 +1,72 @@
+# ============================================================
+# Training Hyperparameters Configuration
+# ============================================================
+
+experiment:
+  name: "music_transformer_v1"
+  description: "Transformer-based music composition with RAG"
+  seed: 42
+
+dataset:
+  name: "MAESTRO"  # or "Lakh", "custom"
+  path: "data/processed/sequences.npz"
+  sequence_length: 256
+  stride: 128
+  augmentation:
+    transpose: true          # Random pitch transposition ±6 semitones
+    time_stretch: true       # Random tempo variation ±10%
+    velocity_jitter: true    # Random velocity variation ±10
+
+model:
+  architecture: "transformer_encoder_decoder"
+  d_model: 256
+  nhead: 8
+  num_encoder_layers: 6
+  num_decoder_layers: 6
+  dim_feedforward: 1024
+  dropout: 0.1
+  activation: "gelu"
+  layer_norm_eps: 1.0e-5
+  tie_embeddings: true
+
+optimizer:
+  type: "adamw"
+  lr: 1.0e-4
+  betas: [0.9, 0.98]
+  eps: 1.0e-9
+  weight_decay: 0.01
+  gradient_clip: 1.0
+
+scheduler:
+  type: "warmup_cosine"
+  warmup_steps: 4000
+  min_lr: 1.0e-6
+  T_max: 100000
+
+training:
+  num_epochs: 100
+  batch_size: 32
+  gradient_accumulation_steps: 4
+  use_amp: true
+  label_smoothing: 0.1
+  early_stopping_patience: 10
+
+checkpointing:
+  save_dir: "checkpoints"
+  save_every_n_epochs: 5
+  keep_top_k: 3
+  monitor: "val_loss"
+  mode: "min"
+
+logging:
+  log_dir: "logs"
+  use_tensorboard: true
+  use_wandb: false
+  log_every_n_steps: 100
+  eval_every_n_epochs: 1
+
+hardware:
+  device: "cuda"
+  num_workers: 4
+  pin_memory: true
+  compile_model: false  # Set true for PyTorch 2.0+ torch.compile
