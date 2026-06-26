@@ -1125,7 +1125,7 @@ function renderPiano() {{
 // ============================================================
 // Initialisation
 // ============================================================
-window.addEventListener('load', () => {{
+function init() {{
   buildPiano();
 
   try {{
@@ -1140,7 +1140,8 @@ window.addEventListener('load', () => {{
   }} catch(e) {{
     console.warn('MIDI parse error:', e);
   }}
-}});
+}}
+init();
 </script>
 </body>
 </html>"""
