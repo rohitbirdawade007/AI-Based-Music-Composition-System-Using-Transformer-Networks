@@ -185,17 +185,34 @@ def show_generate_page():
         if result is None:
             # Placeholder
             st.markdown("""
-            <div class='music-card' style='text-align: center; padding: 60px 20px;'>
-                <div style='font-size: 4rem; margin-bottom: 16px;'>🎵</div>
+            <div class='music-card' style='text-align: center; padding: 40px 20px 16px;'>
+                <div style='font-size: 3.5rem; margin-bottom: 12px;'>🎵</div>
                 <div style='color: #64748b; font-size: 1.1rem;'>
                     Configure parameters and click<br>
                     <strong style='color: #8b5cf6;'>Generate Music</strong> to start composing
                 </div>
-                <div style='margin-top: 20px; color: #475569; font-size: 0.85rem;'>
+                <div style='margin-top: 16px; color: #475569; font-size: 0.85rem; margin-bottom: 12px;'>
                     Powered by Transformer Networks + Music Theory Engine
                 </div>
             </div>
             """, unsafe_allow_html=True)
+
+            st.markdown("### 🔊 Listen to a Sample Composition")
+            try:
+                sample_path = Path("data/sample/bach_prelude.mid")
+                if sample_path.exists():
+                    from src.utils.audio import AudioUtils
+                    audio_util = AudioUtils()
+                    sample_bytes = sample_path.read_bytes()
+                    player_html = audio_util.generate_audio_html(
+                        sample_bytes,
+                        title="Bach Prelude (Sample)"
+                    )
+                    st.components.v1.html(player_html, height=380, scrolling=False)
+                else:
+                    st.info("Sample MIDI file not found on disk.")
+            except Exception as e:
+                st.warning(f"Could not load sample player: {e}")
         else:
             # ── Metrics Row ────────────────────────────────────────────────
             mc1, mc2, mc3, mc4 = st.columns(4)
